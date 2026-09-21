@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ob-Havo UZ — Jonli Ob-Havo</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<canvas id="fx"></canvas>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="stars" id="stars"></div>
+<div class="clouds"><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div></div>
+<div id="sunMoon" class="sun"></div>
+<div id="cursorGlow"></div>
+
+<div class="marquee-top"><div class="marquee-track" id="marqueeTrack">
+<span>🌦 TOSHKENT • SAMARQAND • BUXORO • ANDIJON • FARG'ONA • URGANCH • NUKUS • QARSHI • TERMIZ • JIZZAX • NAVOIY • 🌦 JONLI OB-HAVO • </span>
+<span>🌦 TOSHKENT • SAMARQAND • BUXORO • ANDIJON • FARG'ONA • URGANCH • NUKUS • QARSHI • TERMIZ • JIZZAX • NAVOIY • 🌦 JONLI OB-HAVO • </span>
+</div></div>
+
+<header class="nav glass">
+  <div class="logo"><span class="logo-emoji">🌪️</span><div><b>OB-HAVO.UZ</b><small>maximalist forecast</small></div></div>
+  <div class="search-box">
+    <input id="searchInput" type="text" placeholder="Shahar qidiring... masalan: Samarqand" autocomplete="off">
+    <button id="searchBtn">🔍 Qidirish</button>
+    <div id="suggest" class="suggest hidden"></div>
+  </div>
+  <div class="nav-actions">
+    <button id="unitBtn" class="pill">°C / °F</button>
+    <button id="locBtn" class="pill accent">📍 Men qayerdaman</button>
+  </div>
+</header>
+
+<main>
+  <div id="clock" class="clock">--:--:-- • --</div>
+
+  <section class="hero">
+    <div class="hero-left glass tilt">
+      <div class="city-row">
+        <h1 id="cityName">Toshkent 📍</h1>
+        <span id="dateStr" class="badge">--</span>
+      </div>
+      <div class="big-temp"><span id="temp">--</span><span class="deg">°</span><span id="wIcon" class="w-icon">⛅</span></div>
+      <div id="wDesc" class="w-desc">Yuklanmoqda...</div>
+      <div class="feels">His qilinishi: <b id="feels">--</b> • Kunduzgi max: <b id="tMax">--</b> • Kechasi min: <b id="tMin">--</b></div>
+      <div class="quick-cities" id="quickCities"></div>
+    </div>
+    <div class="hero-right">
+      <div class="orbit-card glass">
+        <div class="orbit"></div>
+        <div class="orbit-center" id="orbitIcon">🌤️</div>
+        <div class="orbit-label o1" id="oSunrise">🌅 --</div>
+        <div class="orbit-label o2" id="oSunset">🌇 --</div>
+        <div class="orbit-label o3" id="oWind">💨 --</div>
+        <div class="orbit-label o4" id="oHum">💧 --</div>
+      </div>
+      <div class="advice glass"><span>🤖 AI Maslahat</span><p id="adviceText">Havo ma'lumoti yuklanmoqda...</p></div>
+    </div>
+  </section>
+
+  <section class="stats" id="statsGrid">
+    <div class="stat glass">💨<small>Shamol</small><b id="sWind">--</b><i id="sWindDir">--</i></div>
+    <div class="stat glass">💧<small>Namlik</small><b id="sHum">--</b><i>nisbiy namlik</i></div>
+    <div class="stat glass">🧭<small>Bosim</small><b id="sPress">--</b><i>hPa</i></div>
+    <div class="stat glass">☁️<small>Bulutlilik</small><b id="sCloud">--</b><i>osmon qoplami</i></div>
+    <div class="stat glass">🌧️<small>Yog'ingarchilik</small><b id="sPrec">--</b><i>mm</i></div>
+    <div class="stat glass">🌅<small>Quyosh</small><b id="sSun">-- / --</b><i>chiqish / botish</i></div>
+  </section>
+
+  <section class="glass section">
+    <h2>⏳ Soatbay prognoz <span class="live-dot"></span></h2>
+    <div class="hourly" id="hourly"></div>
+  </section>
+
+  <section class="glass section">
+    <h2>📅 7 kunlik prognoz</h2>
+    <div class="daily" id="daily"></div>
+  </section>
+
+  <section class="glass section fun">
+    <h2>🎮 Kayfiyat paneli</h2>
+    <div class="fun-row">
+      <button onclick="confettiBurst()">🎉 Konfetti</button>
+      <button id="rainBtn">🌧️ Yomg'ir chaqirish</button>
+      <button id="snowBtn">❄️ Qor yog'dirish</button>
+      <button id="clearFxBtn">🧹 Tozalash</button>
+    </div>
+    <p class="hint">Tugmalarni bosing — fon va effektlar jonlanadi! Kartalarni sichqoncha bilan qiyshaytirib ko'ring (3D tilt).</p>
+  </section>
+</main>
+
+<footer>© 2026 Ob-Havo.UZ • Open-Meteo API • O'zbekistonda sevgi bilan 🇺🇿 • <span id="footTemp"></span></footer>
+<div id="loader"><div class="loader-inner">🌪️<p>Ob-havo yuklanmoqda...</p></div></div>
+<div id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
