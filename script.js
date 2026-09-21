@@ -110,13 +110,78 @@ function render(d, cityName){
     const date=new Date(dt);
     const label=i===0?'Bugun':days[date.getDay()]+", "+date.getDate()+"-"+(date.getMonth()+1);
     const left=((allMin[i]-gMin)/(gMax-gMin||1))*100, width=((allMax[i]-allMin[i])/(gMax-gMin||1))*100;
-    dh+=`<div class="d-row"><span style="font-size:30px">${di}</span><span class="day">${label}<br><small style="opacity:.7">${dd} • 🌧️ ${d.daily.precipitation_probability_max[i]??0}%</small></span><b>${t(allMin[i])}°</b><div class="tbar"><i style="left:${left}%;width:${Math.max(width,8)}%"></i></div><b>${t(allMax[i])}°</b></div>`;
+    dh+=`<div class="d-row"><span style="font-size:30px">${di}</span><span class="day">${label}<br><small style="opacity:.7">${dd} • 🌧️ ${d.daily.precipitation_probability_max[i]??0}%</small></span><b>${t(allMin[i])}°</b><div class="tbar"><i style="left:${left}%;width:${Math.max(width,8)}%"></i></div><b>${t(allMax[i])}°</b><button class="mini-save" data-save-day="${i}">💾</button></div>`;
   });
   $('daily').innerHTML=dh;
 
   document.querySelectorAll('#quickCities button').forEach(b=>b.classList.toggle('active', b.textContent===cityName));
 }
 function windDir(deg){ const d=['Shimol ⬆️','Shimoli-sharq ↗️','Sharq ➡️','Janubi-sharq ↘️','Janub ⬇️','Janubi-gʻarb ↙️','Gʻarb ⬅️','Shimoli-gʻarb ↖️']; return d[Math.round(deg/45)%8]; }
+
+// --- localStorage: turli sanalardagi ob-havoni saqlash ---
+const LS_KEY = 'obhavo_saved_v1';
+function getSaved(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || []; }catch{ return []; } }
+function setSaved(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); updateSavedCount(); }
+function updateSavedCount(){ const n=getSaved().length; if($('savedCount'))$('savedCount').textContent=n; if($('savedCount2'))$('savedCount2').textContent=n+' ta'; }
+
+function saveCurrent(){
+  if(!currentData) return toast("⏳ Avval ob-havo yuklanishini kuting!");
+  const {city,d}=currentData, c=d.current, [icon,desc]=wmoInfo(c.weather_code,c.is_day);
+  const item={
+    id: Date.now(),
+    city: city.n,
+    date: d.current.time.slice(0,10),          // 2026-09-21
+    label: new Date(c.time).toLocaleDateString('uz-UZ',{day:'numeric',month:'long',year:'numeric'}),
+    icon, desc,
+    tempC: c.temperature_2m, feelsC: c.apparent_temperature,
+    maxC: d.daily.temperature_2m_max[0], minC: d.daily.temperature_2m_min[0],
+    wind: Math.round(c.wind_speed_10m), hum: c.relative_humidity_2m,
+    savedAt: new Date().toLocaleString('uz-UZ')
+  };
+  const arr=getSaved();
+  if(arr.some(x=>x.city===item.city && x.date===item.date)) return toast("⚠️ Bu sana allaqachon saqlangan!");
+  arr.unshift(item); setSaved(arr); renderSaved();
+  toast(`💾 Saqlandi: ${item.city} • ${item.label}`);
+}
+
+function saveDay(i){
+  if(!currentData) return;
+  const {city,d}=currentData, [icon,desc]=wmoInfo(d.daily.weather_code[i],true);
+  const dateStr=d.daily.time[i];
+  const days=['Yakshanba','Dushanba','Seshanba','Chorshanba','Payshanba','Juma','Shanba'];
+  const dt=new Date(dateStr);
+  const item={
+    id: Date.now(),
+    city: city.n,
+    date: dateStr,
+    label: (i===0?'Bugun, ':'')+days[dt.getDay()]+", "+dt.getDate()+"-"+(dt.getMonth()+1)+"."+dt.getFullYear(),
+    icon, desc,
+    tempC: (d.daily.temperature_2m_max[i]+d.daily.temperature_2m_min[i])/2,
+    feelsC: null, maxC: d.daily.temperature_2m_max[i], minC: d.daily.temperature_2m_min[i],
+    wind: Math.round(d.daily.wind_speed_10m_max[i]??0),
+    hum: null, prec: d.daily.precipitation_probability_max[i]??0,
+    savedAt: new Date().toLocaleString('uz-UZ')
+  };
+  const arr=getSaved();
+  if(arr.some(x=>x.city===item.city && x.date===item.date)) return toast("⚠️ Bu kun allaqachon saqlangan!");
+  arr.unshift(item); setSaved(arr); renderSaved();
+  toast(`💾 Saqlandi: ${item.city} • ${item.label}`);
+}
+
+function renderSaved(){
+  const box=$('savedList'); if(!box) return;
+  const arr=getSaved(); updateSavedCount();
+  if(!arr.length){ box.innerHTML=`<div class="saved-empty">📭 Hali hech narsa saqlanmagan.<br>Hozirgi ob-havoni yoki 7 kunlikdagi istalgan kunni 💾 bilan saqlang!</div>`; return; }
+  box.innerHTML=arr.map(x=>`
+    <div class="saved-card">
+      <button class="s-del" data-del="${x.id}">✖</button>
+      <div class="s-city">${x.icon} ${x.city}</div>
+      <div class="s-date">📅 ${x.label} • saqlangan: ${x.savedAt}</div>
+      <div class="s-temp">${t(x.tempC)}${tUnit()}</div>
+      <div class="s-desc">${x.desc}</div>
+      <div class="s-meta">⬆️ ${t(x.maxC)}${tUnit()} • ⬇️ ${t(x.minC)}${tUnit()}<br>💨 ${x.wind} km/s${x.hum!=null?` • 💧 ${x.hum}%`:''}${x.prec!=null?` • 🌧️ ${x.prec}%`:''}${x.feelsC!=null?`<br>🌡️ His: ${t(x.feelsC)}${tUnit()}`:''}</div>
+    </div>`).join('');
+}
 
 function setTheme(code,isDay){
   document.body.classList.remove('night','rain','snow');
@@ -196,7 +261,7 @@ $('searchInput').addEventListener('input',e=>{
 $('searchBtn').onclick=()=>{const q=$('searchInput').value.trim(); if(!q)return toast("✍️ Shahar nomini yozing!"); const f=CITIES.find(c=>c.n.toLowerCase().includes(q.toLowerCase())); if(f)loadWeather(f); else $('searchInput').dispatchEvent(new Event('input'));};
 
 // tugmalar
-$('unitBtn').onclick=()=>{isCelsius=!isCelsius; $('unitBtn').textContent=isCelsius?'°C / °F':'°F / °C'; if(currentData)render(currentData.d,currentData.city.n); toast(isCelsius?"🌡️ Selsiy (°C)":"🌡️ Farengeyt (°F)");};
+$('unitBtn').onclick=()=>{isCelsius=!isCelsius; $('unitBtn').textContent=isCelsius?'°C / °F':'°F / °C'; if(currentData)render(currentData.d,currentData.city.n); renderSaved(); toast(isCelsius?"🌡️ Selsiy (°C)":"🌡️ Farengeyt (°F)");};
 $('locBtn').onclick=()=>{ if(!navigator.geolocation)return toast("📵 Brauzer geolokatsiyani qo'llamaydi"); toast("📡 Joylashuv aniqlanmoqda..."); navigator.geolocation.getCurrentPosition(p=>loadWeather({n:"Mening joyim",lat:p.coords.latitude,lon:p.coords.longitude}),()=>toast("❌ Ruxsat berilmadi — Toshkent ko'rsatiladi")); };
 $('rainBtn').onclick=()=>{fxMode='rain';startFx(61,1);toast("🌧️ Yomg'ir yog'moqda...");};
 $('snowBtn').onclick=()=>{fxMode='snow';startFx(73,1);toast("❄️ Qor yog'moqda...");};
@@ -212,5 +277,12 @@ document.querySelectorAll('.tilt').forEach(card=>{
   card.addEventListener('mousemove',e=>{const r=card.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; card.style.transform=`perspective(900px) rotateY(${x*10}deg) rotateX(${-y*10}deg)`;});
   card.addEventListener('mouseleave',()=>card.style.transform='perspective(900px)');
 });
+
+// saqlanganlar: tugmalar
+$('saveCurrentBtn').onclick=saveCurrent;
+$('clearSavedBtn').onclick=()=>{ if(!getSaved().length) return toast("📭 O'chiriladigan narsa yo'q"); if(confirm("Barcha saqlangan ob-havolar o'chirilsinmi?")){ setSaved([]); renderSaved(); toast("🗑️ Barchasi o'chirildi"); } };
+$('daily').addEventListener('click',e=>{ const b=e.target.closest('[data-save-day]'); if(b) saveDay(+b.dataset.saveDay); });
+$('savedList').addEventListener('click',e=>{ const b=e.target.closest('[data-del]'); if(!b) return; setSaved(getSaved().filter(x=>x.id!=b.dataset.del)); renderSaved(); toast("🗑️ O'chirildi"); });
+renderSaved();
 
 loadWeather(CITIES[0]);
